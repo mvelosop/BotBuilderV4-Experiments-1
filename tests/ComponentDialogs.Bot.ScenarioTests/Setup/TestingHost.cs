@@ -23,12 +23,14 @@ namespace ComponentDialogs.Bot.ScenarioTests
 
         public TestingHost()
         {
+            // Configuration setup
             Configuration = new ConfigurationBuilder()
                 .SetBasePath(Directory.GetCurrentDirectory())
                 .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
                 .AddEnvironmentVariables()
                 .Build();
 
+            // Logging setup
             Log.Logger = new LoggerConfiguration()
                 .MinimumLevel.Verbose()
                 .Enrich.WithProperty("Application", ApplicationName)
@@ -43,14 +45,15 @@ namespace ComponentDialogs.Bot.ScenarioTests
                     flushToDiskInterval: TimeSpan.FromSeconds(1))
                 .CreateLogger();
 
+            // Dependency injection setup
             var services = new ServiceCollection();
 
-            // General infrastructure
+            // General infrastructure services configuration
             services.AddSingleton<IConfiguration>(sp => Configuration);
             services.AddSingleton(new LoggerFactory().AddSerilog());
             services.AddLogging();
 
-            // Bot infrastructure
+            // Bot infrastructure services configuration
             services.AddScoped<IStorage, MemoryStorage>();
             services.AddScoped<ConversationState>();
             services.AddScoped<ComponentDialogsBotAccessors>(sp =>
@@ -67,10 +70,10 @@ namespace ComponentDialogs.Bot.ScenarioTests
                 };
             });
 
-            // Bot
+            // Bot service configuration
             services.AddScoped<ComponentDialogsBot>();
 
-            // Application services
+            // Application services configuration
             services.AddScoped<RegistrationRepo>();
             services.AddScoped<IBotUserServices, BotUserServices>();
 
