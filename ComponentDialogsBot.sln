@@ -3,9 +3,47 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.28307.168
 MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{8C63A4B1-63C7-49DF-86F7-593B83F6CC2B}"
+	ProjectSection(SolutionItems) = preProject
+		.editorconfig = .editorconfig
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{080CEF6E-C3F3-4771-8984-E2B71F5DD07A}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{A7E9279D-EAC9-4A5A-B283-D8F5BE2CFC97}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ComponentDialogs.Bot", "src\ComponentDialogs.Bot\ComponentDialogs.Bot.csproj", "{1E3EC3A4-1861-48DE-803E-889754BF31EC}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Registration", "src\Registration\Registration.csproj", "{E681394E-A166-4990-838D-28C91D50C4BF}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ComponentDialogs.Bot.ScenarioTests", "tests\ComponentDialogs.Bot.ScenarioTests\ComponentDialogs.Bot.ScenarioTests.csproj", "{611D1CC9-01F2-4FC7-B56D-254B09FFB88F}"
+EndProject
 Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{1E3EC3A4-1861-48DE-803E-889754BF31EC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1E3EC3A4-1861-48DE-803E-889754BF31EC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1E3EC3A4-1861-48DE-803E-889754BF31EC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1E3EC3A4-1861-48DE-803E-889754BF31EC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E681394E-A166-4990-838D-28C91D50C4BF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E681394E-A166-4990-838D-28C91D50C4BF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E681394E-A166-4990-838D-28C91D50C4BF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E681394E-A166-4990-838D-28C91D50C4BF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{611D1CC9-01F2-4FC7-B56D-254B09FFB88F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{611D1CC9-01F2-4FC7-B56D-254B09FFB88F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{611D1CC9-01F2-4FC7-B56D-254B09FFB88F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{611D1CC9-01F2-4FC7-B56D-254B09FFB88F}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{1E3EC3A4-1861-48DE-803E-889754BF31EC} = {080CEF6E-C3F3-4771-8984-E2B71F5DD07A}
+		{E681394E-A166-4990-838D-28C91D50C4BF} = {080CEF6E-C3F3-4771-8984-E2B71F5DD07A}
+		{611D1CC9-01F2-4FC7-B56D-254B09FFB88F} = {A7E9279D-EAC9-4A5A-B283-D8F5BE2CFC97}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {D3CA8964-1585-4C59-B969-95549BAE3521}
