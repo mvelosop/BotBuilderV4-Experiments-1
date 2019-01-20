@@ -56,19 +56,7 @@ namespace ComponentDialogs.Bot.ScenarioTests
             // Bot infrastructure services configuration
             services.AddScoped<IStorage, MemoryStorage>();
             services.AddScoped<ConversationState>();
-            services.AddScoped<ComponentDialogsBotAccessors>(sp =>
-            {
-                var conversationState = sp.GetRequiredService<ConversationState>();
-
-                // Create the custom state accessor.
-                // State accessors enable other components to read and write individual properties of state.
-                return new ComponentDialogsBotAccessors(conversationState)
-                {
-                    CounterState = conversationState.CreateProperty<CounterState>(ComponentDialogsBotAccessors.CounterStateName),
-                    DialogState = conversationState.CreateProperty<DialogState>(ComponentDialogsBotAccessors.DialogStateName),
-                    GreetingState = conversationState.CreateProperty<GreetingState>(ComponentDialogsBotAccessors.GreetingStateName),
-                };
-            });
+            services.AddScoped<ComponentDialogsBotAccessors>();
 
             // Bot service configuration
             services.AddScoped<ComponentDialogsBot>();

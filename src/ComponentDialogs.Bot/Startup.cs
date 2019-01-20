@@ -30,6 +30,7 @@ namespace ComponentDialogs.Bot
     {
         private readonly bool _isProduction;
         private ILoggerFactory _loggerFactory;
+        private IServiceProvider _appServices;
 
         public Startup(IHostingEnvironment env, IConfiguration configuration)
         {
@@ -46,9 +47,13 @@ namespace ComponentDialogs.Bot
         /// </value>
         public IConfiguration Configuration { get; }
 
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
+        public void Configure(
+            IApplicationBuilder app,
+            ILoggerFactory loggerFactory,
+            IServiceProvider appServices)
         {
             _loggerFactory = loggerFactory;
+            _appServices = appServices;
 
             app.UseDefaultFiles()
                 .UseStaticFiles()
@@ -64,6 +69,10 @@ namespace ComponentDialogs.Bot
         /// <seealso cref="https://docs.microsoft.com/en-us/azure/bot-service/bot-service-manage-channels?view=azure-bot-service-4.0"/>
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddSingleton<IStorage, MemoryStorage>();
+            services.AddSingleton<ConversationState>();
+            services.AddSingleton<ComponentDialogsBotAccessors>();
+
             services.AddBot<ComponentDialogsBot>(options =>
             {
                 var secretKey = Configuration.GetSection("botFileSecret")?.Value;
@@ -93,10 +102,6 @@ namespace ComponentDialogs.Bot
                     await context.SendActivityAsync("Sorry, it looks like something went wrong.");
                 };
 
-                // The Memory Storage used here is for local bot debugging only. When the bot
-                // is restarted, everything stored in memory will be gone.
-                IStorage dataStore = new MemoryStorage();
-
                 // For production bots use the Azure Blob or
                 // Azure CosmosDB storage providers. For the Azure
                 // based storage providers, add the Microsoft.Bot.Builder.Azure
@@ -117,31 +122,9 @@ namespace ComponentDialogs.Bot
 
                 // Create Conversation State object.
                 // The Conversation State object is where we persist anything at the conversation-scope.
-                var conversationState = new ConversationState(dataStore);
+                var conversationState = _appServices.GetService<ConversationState>();
 
-                options.State.Add(conversationState);
                 options.Middleware.Add(new AutoSaveStateMiddleware(conversationState));
-            });
-
-            // Create and register state accessors.
-            // Accessors created here are passed into the IBot-derived class on every turn.
-            services.AddSingleton<ComponentDialogsBotAccessors>(sp =>
-            {
-                var options = sp.GetRequiredService<IOptions<BotFrameworkOptions>>().Value ??
-                    throw new InvalidOperationException("BotFrameworkOptions must be configured prior to setting up the state accessors");
-
-                var conversationState = options.State.OfType<ConversationState>().FirstOrDefault() ??
-                    throw new InvalidOperationException("ConversationState must be defined and added before adding conversation-scoped state accessors.");
-
-                // Create the custom state accessor.
-                // State accessors enable other components to read and write individual properties of state.
-                return new ComponentDialogsBotAccessors(conversationState)
-                {
-                    CounterState = conversationState.CreateProperty<CounterState>(ComponentDialogsBotAccessors.CounterStateName),
-                    DialogState = conversationState.CreateProperty<DialogState>(ComponentDialogsBotAccessors.DialogStateName),
-                    GreetingState = conversationState.CreateProperty<GreetingState>(ComponentDialogsBotAccessors.GreetingStateName),
-
-                };
             });
 
             services.AddSingleton<RegistrationRepo>();
