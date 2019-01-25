@@ -1,7 +1,7 @@
-﻿using ComponentDialogBot.Dialogs.Greeting;
-using Microsoft.Bot.Builder;
+﻿using Microsoft.Bot.Builder;
 using Microsoft.Bot.Builder.Dialogs;
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -9,60 +9,57 @@ namespace ComponentDialogs.Bot.Core
 {
     public class ComponentDialogsBotAccessors
     {
-        private static readonly string CounterStateName = $"{nameof(ComponentDialogsBotAccessors)}.CounterState";
-        private static readonly string DialogStateName = $"{nameof(ComponentDialogsBotAccessors)}.DialogState";
-        private static readonly string GreetingStateName = $"{nameof(ComponentDialogsBotAccessors)}.GreetingState";
+        private readonly Dictionary<string, object> _stateAccessors = new Dictionary<string, object>();
 
         public ComponentDialogsBotAccessors(
             ConversationState conversationState)
         {
             ConversationState = conversationState ?? throw new ArgumentNullException(nameof(conversationState));
 
-            CounterState = conversationState.CreateProperty<CounterState>(CounterStateName);
-            DialogState = conversationState.CreateProperty<DialogState>(DialogStateName);
-            GreetingState = conversationState.CreateProperty<GreetingState>(GreetingStateName);
+            DialogState = GetAccessor<DialogState>();
         }
 
         public ConversationState ConversationState { get; }
 
-        public IStatePropertyAccessor<CounterState> CounterState { get; }
-
         public IStatePropertyAccessor<DialogState> DialogState { get; }
 
-        public IStatePropertyAccessor<GreetingState> GreetingState { get; }
-
-
-        public async Task<CounterState> GetCounterStateAsync(ITurnContext context, CancellationToken cancellationToken)
+        public async Task<TState> GetAsync<TState>(ITurnContext context, CancellationToken cancellationToken)
+            where TState : new()
         {
-            return await CounterState.GetAsync(context, () => new CounterState(), cancellationToken);
+            var accessor = GetAccessor<TState>();
+
+            return await accessor.GetAsync(context, () => new TState(), cancellationToken);
         }
 
-        public async Task<GreetingState> GetGreetingStateAsync(ITurnContext context, CancellationToken cancellationToken)
+        public async Task<TState> SetAsync<TState>(ITurnContext context, Action<TState> updateAction, CancellationToken cancellationToken)
+            where TState : new()
         {
-            return await GreetingState.GetAsync(context, () => new GreetingState(), cancellationToken);
-        }
-
-        public async Task<CounterState> SetCounterStateAsync(ITurnContext context, Action<CounterState> updateAction, CancellationToken cancellationToken)
-        {
-            var state = await GetCounterStateAsync(context, cancellationToken);
+            var accessor = GetAccessor<TState>();
+            var state = await accessor.GetAsync(context, () => new TState(), cancellationToken);
 
             updateAction.Invoke(state);
 
-            await CounterState.SetAsync(context, state, cancellationToken);
+            await accessor.SetAsync(context, state, cancellationToken);
 
             return state;
         }
 
-        public async Task<GreetingState> SetGreetingStateAsync(ITurnContext context, Action<GreetingState> updateAction, CancellationToken cancellationToken)
+        private IStatePropertyAccessor<TState> GetAccessor<TState>()
         {
-            var state = await GetGreetingStateAsync(context, cancellationToken);
+            var accessorKey = $"{nameof(ComponentDialogsBotAccessors)}.{typeof(TState).Name}";
+            IStatePropertyAccessor<TState> accessor = null;
 
-            updateAction.Invoke(state);
+            if (_stateAccessors.ContainsKey(accessorKey))
+            {
+                accessor = _stateAccessors[accessorKey] as IStatePropertyAccessor<TState>;
+            }
+            else
+            {
+                accessor = ConversationState.CreateProperty<TState>(accessorKey);
+                _stateAccessors.Add(accessorKey, accessor);
+            }
 
-            await GreetingState.SetAsync(context, state, cancellationToken);
-
-            return state;
+            return accessor;
         }
-
     }
 }

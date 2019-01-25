@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+using ComponentDialogBot.Dialogs.Greeting;
 using Microsoft.Bot.Builder;
 using Microsoft.Bot.Builder.Dialogs;
 using Microsoft.Bot.Schema;
@@ -61,7 +62,7 @@ namespace ComponentDialogs.Bot.Core
                     return;
                 }
 
-                var greetingState = await _accessors.GetGreetingStateAsync(turnContext, cancellationToken);
+                var greetingState = await _accessors.GetAsync<GreetingState>(turnContext, cancellationToken);
 
                 if (greetingState.CallName == null)
                 {
@@ -70,14 +71,8 @@ namespace ComponentDialogs.Bot.Core
                     return;
                 }
 
-                // Get the conversation state from the turn context.
-                var state = await _accessors.CounterState.GetAsync(turnContext, () => new CounterState());
-
-                // Bump the turn count for this conversation.
-                state.TurnCount++;
-
-                // Set the property using the accessor.
-                await _accessors.CounterState.SetAsync(turnContext, state);
+                // Set the conversation state from the turn context.
+                var state = await _accessors.SetAsync<CounterState>(turnContext, s => s.TurnCount++, cancellationToken);
 
                 // Echo back to the user whatever they typed.
                 var responseMessage = $"Hi {greetingState.CallName} (Turn {state.TurnCount}): You typed \"{turnContext.Activity.Text}\"";
@@ -106,7 +101,7 @@ namespace ComponentDialogs.Bot.Core
 
             if (user != null)
             {
-                await _accessors.SetGreetingStateAsync(stepContext.Context, state => state.CallName = user.CallName, cancellationToken);
+                await _accessors.SetAsync<GreetingState>(stepContext.Context, s => s.CallName = user.CallName, cancellationToken);
 
                 // Get GreetingState from conversation state
                 await context.SendActivityAsync($"Hi {user.CallName}, nice to talk to you again!");
@@ -155,7 +150,7 @@ namespace ComponentDialogs.Bot.Core
 
             _logger.LogTrace("----- ComponentDialogBot.Step3ThankYouAsync - Checking users in database: {@Users}", await _botUserServices.GetListAsync());
 
-            await _accessors.SetGreetingStateAsync(stepContext.Context, state => state.CallName = botUser.CallName, cancellationToken);
+            await _accessors.SetAsync<GreetingState>(stepContext.Context, s => s.CallName = botUser.CallName, cancellationToken);
 
             await stepContext.Context.SendActivityAsync($"Thanks {botUser.CallName}, I'll echo you from now on, just type anything", cancellationToken: cancellationToken);
 
