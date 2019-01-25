@@ -1,7 +1,6 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using ComponentDialogBot.Dialogs.Greeting;
 using Microsoft.Bot.Builder;
 using Microsoft.Bot.Builder.Dialogs;
 using Microsoft.Bot.Schema;
@@ -62,7 +61,7 @@ namespace ComponentDialogs.Bot.Core
                     return;
                 }
 
-                var greetingState = await GetGreetingStateAsync(turnContext, cancellationToken);
+                var greetingState = await _accessors.GetGreetingStateAsync(turnContext, cancellationToken);
 
                 if (greetingState.CallName == null)
                 {
@@ -96,11 +95,6 @@ namespace ComponentDialogs.Bot.Core
             return (BotUser)stepContext.Values[nameof(BotUser)];
         }
 
-        private async Task<GreetingState> GetGreetingStateAsync(ITurnContext context, CancellationToken cancellationToken)
-        {
-            return await _accessors.GreetingState.GetAsync(context, () => new GreetingState(), cancellationToken);
-        }
-
         private async Task<DialogTurnResult> Step1CheckRegistrationAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
         {
             _logger.LogTrace("----- ComponentDialogBot.Step1CheckRegistrationAsync - Beginning step");
@@ -112,7 +106,7 @@ namespace ComponentDialogs.Bot.Core
 
             if (user != null)
             {
-                await UpdateGreetingStateAsync(stepContext, user.CallName, cancellationToken);
+                await _accessors.SetGreetingStateAsync(stepContext.Context, state => state.CallName = user.CallName, cancellationToken);
 
                 // Get GreetingState from conversation state
                 await context.SendActivityAsync($"Hi {user.CallName}, nice to talk to you again!");
@@ -161,7 +155,7 @@ namespace ComponentDialogs.Bot.Core
 
             _logger.LogTrace("----- ComponentDialogBot.Step3ThankYouAsync - Checking users in database: {@Users}", await _botUserServices.GetListAsync());
 
-            await UpdateGreetingStateAsync(stepContext, botUser.CallName, cancellationToken);
+            await _accessors.SetGreetingStateAsync(stepContext.Context, state => state.CallName = botUser.CallName, cancellationToken);
 
             await stepContext.Context.SendActivityAsync($"Thanks {botUser.CallName}, I'll echo you from now on, just type anything", cancellationToken: cancellationToken);
 
@@ -171,15 +165,6 @@ namespace ComponentDialogs.Bot.Core
         private void StoreBotUser(WaterfallStepContext stepContext, BotUser botUser)
         {
             stepContext.Values[nameof(BotUser)] = botUser;
-        }
-
-        private async Task UpdateGreetingStateAsync(WaterfallStepContext stepContext, string callName, CancellationToken cancellationToken)
-        {
-            var greetingState = await GetGreetingStateAsync(stepContext.Context, cancellationToken);
-
-            greetingState.CallName = callName;
-
-            await _accessors.GreetingState.SetAsync(stepContext.Context, greetingState);
         }
     }
 }
