@@ -3,6 +3,7 @@
 
 using ComponentDialogBot.Dialogs.Greeting;
 using ComponentDialogs.Bot.Core;
+using ComponentDialogs.Bot.Dialogs.Greeting;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Bot.Builder;
@@ -72,6 +73,8 @@ namespace ComponentDialogs.Bot
             services.AddSingleton<IStorage, MemoryStorage>();
             services.AddSingleton<ConversationState>();
             services.AddSingleton<ComponentDialogsBotAccessors>();
+
+            services.AddScoped<GreetingDialog>();
 
             services.AddBot<ComponentDialogsBot>(options =>
             {

@@ -1,5 +1,6 @@
 ﻿using ComponentDialogBot.Dialogs.Greeting;
 using ComponentDialogs.Bot.Core;
+using ComponentDialogs.Bot.Dialogs.Greeting;
 using Microsoft.Bot.Builder;
 using Microsoft.Bot.Builder.Dialogs;
 using Microsoft.Extensions.Configuration;
@@ -57,6 +58,9 @@ namespace ComponentDialogs.Bot.ScenarioTests
             services.AddScoped<IStorage, MemoryStorage>();
             services.AddScoped<ConversationState>();
             services.AddScoped<ComponentDialogsBotAccessors>();
+
+            // Bot dialogs
+            services.AddScoped<GreetingDialog>();
 
             // Bot service configuration
             services.AddScoped<ComponentDialogsBot>();

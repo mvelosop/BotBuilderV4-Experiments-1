@@ -2,12 +2,11 @@
 // Licensed under the MIT License.
 
 using ComponentDialogBot.Dialogs.Greeting;
+using ComponentDialogs.Bot.Dialogs.Greeting;
 using Microsoft.Bot.Builder;
 using Microsoft.Bot.Builder.Dialogs;
 using Microsoft.Bot.Schema;
 using Microsoft.Extensions.Logging;
-using Registration.Application.Contracts;
-using Registration.Domain.Model;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -15,28 +14,20 @@ namespace ComponentDialogs.Bot.Core
 {
     public class ComponentDialogsBot : IBot
     {
-        public const string GreetingDialogId = nameof(GreetingDialogId);
-        public const string TextPromptId = nameof(TextPromptId);
-
         private readonly ComponentDialogsBotAccessors _accessors;
-        private readonly IBotUserServices _botUserServices;
         private readonly ILogger<ComponentDialogsBot> _logger;
 
         public ComponentDialogsBot(
-            ComponentDialogsBotAccessors accessors,
             ILogger<ComponentDialogsBot> logger,
-            IBotUserServices botUserServices)
+            ComponentDialogsBotAccessors accessors,
+            GreetingDialog greetingDialog)
         {
             _logger = logger ?? throw new System.ArgumentNullException(nameof(logger));
             _accessors = accessors ?? throw new System.ArgumentNullException(nameof(accessors));
-            _botUserServices = botUserServices ?? throw new System.ArgumentNullException(nameof(botUserServices));
+            if (greetingDialog == null) throw new System.ArgumentNullException(nameof(greetingDialog));
 
             Dialogs = new DialogSet(_accessors.DialogState)
-                .Add(new TextPrompt(TextPromptId))
-                .Add(new WaterfallDialog(GreetingDialogId)
-                    .AddStep(Step1CheckRegistrationAsync)
-                    .AddStep(Step2GetCallNameAsync)
-                    .AddStep(Step3ThankYouAsync));
+                .Add(greetingDialog);
 
             _logger.LogTrace("----- INSTANCE CREATED - {ClassName}", GetType().Name);
         }
@@ -66,14 +57,13 @@ namespace ComponentDialogs.Bot.Core
 
                 if (greetingState.CallName == null)
                 {
-                    await dialogContext.BeginDialogAsync(GreetingDialogId, null, cancellationToken);
+                    await dialogContext.BeginDialogAsync(GreetingDialog.GreetingDialogId, null, cancellationToken);
 
                     return;
                 }
 
                 // Set the conversation state from the turn context.
                 var state = await _accessors.SetAsync<CounterState>(turnContext, s => s.TurnCount++, cancellationToken);
-
                 // Echo back to the user whatever they typed.
                 var responseMessage = $"Hi {greetingState.CallName} (Turn {state.TurnCount}): You typed \"{turnContext.Activity.Text}\"";
 
@@ -83,83 +73,6 @@ namespace ComponentDialogs.Bot.Core
             {
                 await turnContext.SendActivityAsync($"{turnContext.Activity.Type} event detected");
             }
-        }
-
-        private BotUser GetBotUser(WaterfallStepContext stepContext)
-        {
-            return (BotUser)stepContext.Values[nameof(BotUser)];
-        }
-
-        private async Task<DialogTurnResult> Step1CheckRegistrationAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
-        {
-            _logger.LogTrace("----- ComponentDialogBot.Step1CheckRegistrationAsync - Beginning step");
-
-            var context = stepContext.Context;
-
-            // Check if user is already registered
-            var user = await _botUserServices.FindByChannelUserIdAsync(context.Activity.ChannelId, context.Activity.From.Name);
-
-            if (user != null)
-            {
-                await _accessors.SetAsync<GreetingState>(stepContext.Context, s => s.CallName = user.CallName, cancellationToken);
-
-                // Get GreetingState from conversation state
-                await context.SendActivityAsync($"Hi {user.CallName}, nice to talk to you again!");
-
-                return await stepContext.EndDialogAsync();
-            }
-
-            await context.SendActivityAsync($"Hi {context.Activity.From.Name}! You are not registered in our database.");
-
-            var botUser = new BotUser
-            {
-                ChannelId = context.Activity.ChannelId,
-                UserId = context.Activity.From.Name,
-            };
-
-            StoreBotUser(stepContext, botUser);
-
-            return await stepContext.PromptAsync(
-                TextPromptId,
-                new PromptOptions { Prompt = MessageFactory.Text("Please enter your name") },
-                cancellationToken);
-        }
-
-        private async Task<DialogTurnResult> Step2GetCallNameAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
-        {
-            _logger.LogTrace("----- ComponentDialogBot.Step2GetCallNameAsync - Beginning step");
-
-            var botUser = GetBotUser(stepContext);
-            botUser.Name = (string)stepContext.Result;
-
-            return await stepContext.PromptAsync(
-                TextPromptId,
-                new PromptOptions { Prompt = MessageFactory.Text($"Thanks {botUser.Name}, How do you want me to call you?") },
-                cancellationToken);
-        }
-
-        private async Task<DialogTurnResult> Step3ThankYouAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
-        {
-            _logger.LogTrace("----- ComponentDialogBot.Step3ThankYouAsync - Beginning step");
-
-            var botUser = GetBotUser(stepContext);
-
-            botUser.CallName = (string)stepContext.Result;
-
-            await _botUserServices.AddAsync(botUser);
-
-            _logger.LogTrace("----- ComponentDialogBot.Step3ThankYouAsync - Checking users in database: {@Users}", await _botUserServices.GetListAsync());
-
-            await _accessors.SetAsync<GreetingState>(stepContext.Context, s => s.CallName = botUser.CallName, cancellationToken);
-
-            await stepContext.Context.SendActivityAsync($"Thanks {botUser.CallName}, I'll echo you from now on, just type anything", cancellationToken: cancellationToken);
-
-            return await stepContext.EndDialogAsync(null, cancellationToken);
-        }
-
-        private void StoreBotUser(WaterfallStepContext stepContext, BotUser botUser)
-        {
-            stepContext.Values[nameof(BotUser)] = botUser;
         }
     }
 }
