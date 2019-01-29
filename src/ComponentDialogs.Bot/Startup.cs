@@ -127,6 +127,7 @@ namespace ComponentDialogs.Bot
                 // The Conversation State object is where we persist anything at the conversation-scope.
                 var conversationState = _appServices.GetService<ConversationState>();
 
+                options.State.Add(conversationState);
                 options.Middleware.Add(new AutoSaveStateMiddleware(conversationState));
             });
 

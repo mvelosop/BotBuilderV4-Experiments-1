@@ -7,6 +7,7 @@ using Microsoft.Bot.Builder;
 using Microsoft.Bot.Builder.Dialogs;
 using Microsoft.Bot.Schema;
 using Microsoft.Extensions.Logging;
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -22,9 +23,9 @@ namespace ComponentDialogs.Bot.Core
             ComponentDialogsBotAccessors accessors,
             GreetingDialog greetingDialog)
         {
-            _logger = logger ?? throw new System.ArgumentNullException(nameof(logger));
-            _accessors = accessors ?? throw new System.ArgumentNullException(nameof(accessors));
-            if (greetingDialog == null) throw new System.ArgumentNullException(nameof(greetingDialog));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _accessors = accessors ?? throw new ArgumentNullException(nameof(accessors));
+            if (greetingDialog == null) throw new ArgumentNullException(nameof(greetingDialog));
 
             Dialogs = new DialogSet(_accessors.DialogState)
                 .Add(greetingDialog);
@@ -36,8 +37,6 @@ namespace ComponentDialogs.Bot.Core
 
         public async Task OnTurnAsync(ITurnContext turnContext, CancellationToken cancellationToken = default(CancellationToken))
         {
-            _logger.LogTrace("----- ComponentDialogBot - Receiving activity - Text: {Text} - Activity: {@Activity}", turnContext.Activity.Text, turnContext.Activity);
-
             // Handle Message activity type, which is the main activity type for shown within a conversational interface
             // Message activities may contain text, speech, interactive cards, and binary or unknown attachments.
             // see https://aka.ms/about-bot-activity-message to learn more about the message and other activity types
@@ -45,6 +44,8 @@ namespace ComponentDialogs.Bot.Core
             {
                 // Create the dialog context
                 var dialogContext = await Dialogs.CreateContextAsync(turnContext, cancellationToken);
+
+                _logger.LogTrace("----- ComponentDialogsBot - ActiveDialog: {ActiveDialog} - DialogStack: {@DialogStack}", dialogContext.ActiveDialog?.Id, dialogContext.Stack);
 
                 if (dialogContext.ActiveDialog != null)
                 {
